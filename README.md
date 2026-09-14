@@ -16,9 +16,12 @@ Direct links for bot/platform fields:
 
 ## Files
 
-- `index.html` contains the English and Italian legal pages.
-- `styles.css` contains the responsive layout and visual style.
-- `script.js` controls the EN/IT language switch and remembers the last choice.
+- `index.html` is the bilingual document hub with contact details.
+- `terms.html` and `privacy.html` contain the full English and Italian documents.
+- `style.css` contains the shared responsive layout and visual style.
+- `styles.css` is a compatibility import for older cached pages.
+- `script.js` controls language selection, document navigation, and legacy links.
+- CSS and JavaScript URLs include a version; increment it when publishing asset changes.
 
 ## Publish on GitHub Pages
 

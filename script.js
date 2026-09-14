@@ -1,97 +1,59 @@
 const labels = {
-  en: {
-    title: "Legal Information · D.O.B.",
-    terms: "Terms",
-    privacy: "Privacy",
-    contact: "Contact",
-    top: "Back to top",
-  },
-  it: {
-    title: "Informazioni Legali · D.O.B.",
-    terms: "Termini",
-    privacy: "Privacy",
-    contact: "Contatti",
-    top: "Torna su",
-  },
+  en: { home: 'Legal Information', terms: 'Terms of Service', privacy: 'Privacy Policy', contact: 'Contact', top: 'Back to top ↑', skip: 'Skip to content' },
+  it: { home: 'Informazioni Legali', terms: 'Termini di Servizio', privacy: 'Privacy Policy', contact: 'Contatti', top: 'Torna su ↑', skip: 'Vai al contenuto' },
 };
-
-const hashMap = {
-  en: {
-    terms: "#terms-en",
-    privacy: "#privacy-en",
-    contact: "#contact-en",
-  },
-  it: {
-    terms: "#terms-it",
-    privacy: "#privacy-it",
-    contact: "#contact-it",
-  },
-};
-
-const panels = document.querySelectorAll("[data-lang-panel]");
-const buttons = document.querySelectorAll("[data-language-button]");
-const navLinks = document.querySelectorAll("[data-nav]");
-const footerTop = document.querySelector("[data-footer-top]");
-const year = document.querySelector("#year");
-
-function getInitialLanguage() {
-  const saved = localStorage.getItem("legal-language");
-  if (saved === "it" || saved === "en") {
-    return saved;
-  }
-
-  return navigator.language.toLowerCase().startsWith("it") ? "it" : "en";
+const page = document.body.dataset.page;
+const panels = document.querySelectorAll('[data-lang-panel]');
+const buttons = document.querySelectorAll('[data-language-button]');
+const navLinks = document.querySelectorAll('[data-nav]');
+if (window.matchMedia('(max-width: 680px)').matches) {
+  document.querySelectorAll('.document-index details').forEach(details => { details.open = false; });
 }
-
-function updateLanguage(language, shouldScroll = false) {
+const languageFromHash = () => location.hash.match(/(?:^#|-)(en|it)(?:-|$)/)?.[1];
+function initialLanguage() {
+  if (languageFromHash()) return languageFromHash();
+  try {
+    const saved = localStorage.getItem('dob-legal-language');
+    if (saved === 'en' || saved === 'it') return saved;
+  } catch { /* The page remains usable when storage is disabled. */ }
+  return navigator.language.toLowerCase().startsWith('it') ? 'it' : 'en';
+}
+function applyLanguage(language, scroll = false) {
   document.documentElement.lang = language;
-  document.title = labels[language].title;
-  localStorage.setItem("legal-language", language);
-
-  panels.forEach((panel) => {
-    const isActive = panel.dataset.langPanel === language;
-    panel.hidden = !isActive;
-    panel.setAttribute("aria-hidden", String(!isActive));
-  });
-
-  buttons.forEach((button) => {
-    button.setAttribute(
-      "aria-pressed",
-      String(button.dataset.languageButton === language),
-    );
-  });
-
-  navLinks.forEach((link) => {
+  document.title = `${labels[language][page]} · D.O.B.`;
+  try { localStorage.setItem('dob-legal-language', language); } catch { /* Optional preference. */ }
+  panels.forEach(panel => { panel.hidden = panel.dataset.langPanel !== language; });
+  buttons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.languageButton === language)));
+  navLinks.forEach(link => {
     const key = link.dataset.nav;
-    link.textContent = labels[language][key];
-    link.href = hashMap[language][key];
+    link.textContent = key === 'terms' ? 'ToS' : key === 'privacy' ? 'Privacy' : labels[language][key];
+    link.href = key === 'contact' ? `#contact-${language}` : `${key}.html#${key}-${language}`;
+    if (key === page) link.setAttribute('aria-current', 'page');
+    else link.removeAttribute('aria-current');
   });
-
-  if (footerTop) {
-    footerTop.textContent = labels[language].top;
-  }
-
-  const currentHash = window.location.hash;
-  const targetKey = Object.values(hashMap.en).includes(currentHash)
-    ? Object.entries(hashMap.en).find(([, hash]) => hash === currentHash)[0]
-    : Object.entries(hashMap.it).find(([, hash]) => hash === currentHash)?.[0];
-
-  if (targetKey) {
-    history.replaceState(null, "", hashMap[language][targetKey]);
-    if (shouldScroll) {
-      document.querySelector(hashMap[language][targetKey])?.scrollIntoView();
-    }
+  document.querySelector('[data-footer-top]').textContent = labels[language].top;
+  document.querySelector('[data-skip]').textContent = labels[language].skip;
+  const oldHash = location.hash;
+  const hash = oldHash && oldHash !== '#top' && oldHash !== '#content'
+    ? oldHash.replace(/(^#|-)(en|it)(?=-|$)/, `$1${language}`)
+    : `#${language}`;
+  history.replaceState(null, '', hash);
+  if (scroll && oldHash && oldHash !== '#top') {
+    requestAnimationFrame(() => {
+      if (hash === `#${page}-${language}`) window.scrollTo({ top: 0, behavior: 'instant' });
+      else document.getElementById(hash.slice(1))?.scrollIntoView();
+    });
   }
 }
-
-buttons.forEach((button) => {
-  button.addEventListener("click", () => {
-    updateLanguage(button.dataset.languageButton, true);
-  });
-});
-
-if (year) {
-  year.textContent = String(new Date().getFullYear());
+function restoreLocation() {
+  const legacy = location.hash.match(/^#(terms|privacy)-(en|it)$/);
+  if (page === 'home' && legacy) {
+    location.replace(`${legacy[1]}.html${location.hash}`);
+    return;
+  }
+  applyLanguage(languageFromHash() || initialLanguage(), true);
 }
-
-updateLanguage(getInitialLanguage(), Boolean(window.location.hash));
+buttons.forEach(button => button.addEventListener('click', () => applyLanguage(button.dataset.languageButton, true)));
+window.addEventListener('hashchange', restoreLocation);
+document.querySelector('#year').textContent = new Date().getFullYear();
+restoreLocation();
