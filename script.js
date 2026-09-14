@@ -1,13 +1,13 @@
 const labels = {
   en: {
-    title: "Dossenix Legal Infos",
+    title: "Legal Information · D.O.B.",
     terms: "Terms",
     privacy: "Privacy",
     contact: "Contact",
     top: "Back to top",
   },
   it: {
-    title: "Dossenix Informazioni Legali",
+    title: "Informazioni Legali · D.O.B.",
     terms: "Termini",
     privacy: "Privacy",
     contact: "Contatti",
